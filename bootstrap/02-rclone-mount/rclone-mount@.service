@@ -1,0 +1,22 @@
+[Unit]
+Description=Rclone mount for bucket %i
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/rclone mount \
+        --gcs-object-acl "" \
+        --gcs-bucket-policy-only \
+        --vfs-cache-mode full \
+        --no-modtime \
+        --drive-use-trash=false \
+        --stats=0 \
+        --checkers=16 \
+       :gcs:%i /gcs/%i
+ExecStop=/bin/fusermount -u /gcs/%i
+Restart=always
+RestartSec=10
+User=ubuntu
+Group=ubuntu
+
+[Install]
+# WantedBy=multi-user.target

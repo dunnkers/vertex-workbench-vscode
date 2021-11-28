@@ -1,0 +1,11 @@
+[Unit]
+Description=Rclone mount main service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/bash /opt/rclone-mount/rclone-mount.sh
+RemainAfterExit=yes
+ExecStop=systemctl stop 'rclone-mount@*'
+
+[Install]
+WantedBy=multi-user.target

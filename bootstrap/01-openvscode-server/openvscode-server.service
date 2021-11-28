@@ -1,0 +1,13 @@
+[Unit]
+Description=openvscode-server
+
+[Service]
+Type=simple
+ExecStart=/opt/openvscode-server/server.sh --host 127.0.0.1 --port 8080
+RestartSec=10
+User=ubuntu
+Group=ubuntu
+# Environment=HOME=/home/jupyter
+
+[Install]
+WantedBy=multi-user.target
