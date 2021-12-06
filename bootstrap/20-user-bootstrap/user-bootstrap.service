@@ -1,0 +1,13 @@
+[Unit]
+Description=Bootstrap script that configures the user home dir
+After=workbench-bootstrap.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/user-bootstrap
+ExecStart=bash /opt/user-bootstrap/user-bootstrap.sh
+RemainAfterExit=true
+StandardOutput=journal
+
+[Install]
+WantedBy=multi-user.target

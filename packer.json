@@ -1,7 +1,4 @@
 {
-    "variables": {
-        "project_id": "playground-jdruiter-257009"
-    },
     "builders": [
         {
           "type": "googlecompute",
@@ -11,13 +8,14 @@
           "source_image_family": "ubuntu-2004-lts",
           "region": "europe-west1",
           "zone": "europe-west1-b",
-          "image_description": "Custom Vertex image with OpenVSCode-server",
+          "image_description": "Custom Vertex Workbench image with OpenVSCode-server, Pyenv and Poetry.",
           "image_family": "vertex-ubuntu-vscode",
           "image_name": "vertex-ubuntu-vscode-latest",
           "disk_size": 100,
           "ssh_username": "ubuntu",
-          "network": "default",
-          "subnetwork": "default"
+          "network": "{{user `project_id`}}",
+          "subnetwork": "{{user `project_id`}}",
+          "tags": ["packer"]
         }
     ],
     "provisioners": [

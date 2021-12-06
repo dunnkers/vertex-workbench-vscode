@@ -1,0 +1,12 @@
+[Unit]
+Description=Bootstrap script that configures the VM for Vertex Workbench
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/workbench-bootstrap
+ExecStart=bash /opt/workbench-bootstrap/workbench-bootstrap.sh
+RemainAfterExit=true
+StandardOutput=journal
+
+[Install]
+WantedBy=multi-user.target

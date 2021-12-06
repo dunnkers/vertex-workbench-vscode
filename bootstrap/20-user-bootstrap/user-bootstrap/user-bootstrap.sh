@@ -1,5 +1,15 @@
 #!/usr/bin/env bash
 
+# This script handles any specific user configuration that can't be done
+# when the image has been built and therefore needs to be done at boot time.
+#
+# For example, here we copy + set up pyenv + poetry in the users home directory.
+# This can't be done at build time because the users home directory may be mounted
+# on the data disk, which isn't available at that time. Also, we can't keep
+# poetry/pyenv on the boot disk, as that would mean that anything the user changes
+# (e.g. updating poetry, installing a Python env) would be lost as soon as the
+# boot disk is replaced due to an image update, VM replacement, etc.
+
 set -o errexit
 set -o pipefail
 set -o nounset

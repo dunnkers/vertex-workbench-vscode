@@ -5,7 +5,7 @@ set -o pipefail
 set -o nounset
 set -o xtrace
 
-SRC_PATH=`dirname $0 | xargs realpath`
+SCRIPT_DIR=`dirname $0 | xargs realpath`
 
 # Can't upgrade to newer versions until this issue has been addressed: https://github.com/microsoft/vscode/issues/136615.
 OPENVSCODE_SERVER_VERSION=1.61.0
@@ -18,5 +18,5 @@ chown -R root:root /opt/openvscode-server
 
 rm openvscode-server-v${OPENVSCODE_SERVER_VERSION}-linux-x64.tar.gz
 
-cp ${SRC_PATH}/openvscode-server.service /etc/systemd/system/openvscode-server.service
+cp ${SCRIPT_DIR}/openvscode-server.service /etc/systemd/system/openvscode-server.service
 systemctl enable openvscode-server
