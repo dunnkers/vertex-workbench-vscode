@@ -26,13 +26,14 @@ from urllib.error import HTTPError
 AGENT_CONTAINER_NAME = "proxy-agent"
 AGENT_CONTAINER_URL = "gcr.io/inverting-proxy/agent"
 
-T = TypeVar("T")
+T = TypeVar("T")  # pylint: disable=invalid-name
 
 logging.basicConfig(format="[%(asctime)s] %(message)s", level=logging.INFO)
 
 
 class ProxyMode(Enum):
     """Enum of all possible proxy modes."""
+
     MAIL = "mail"
     NONE = "none"
     PROJECT_EDITORS = "project_editors"
@@ -43,6 +44,7 @@ class ProxyMode(Enum):
 @dataclass
 class ProxyRegisterResult:
     """Utility class for storing the result of registering on the proxy."""
+
     backend_id: str
     hostname: str
 
@@ -94,12 +96,14 @@ def main() -> None:
             "proxy-url": registration.hostname,
             "title": "OpenVSCode with Pyenv and Poetry",
             "framework": "OpenVSCode/Pyenv/Poetry",
-            "version": "latest"
-        }
+            "version": "latest",
+        },
     )
 
 
-def register_with_proxy(proxy_url: str, proxy_mode: ProxyMode, proxy_mail: Optional[str]) -> ProxyRegisterResult:
+def register_with_proxy(
+    proxy_url: str, proxy_mode: ProxyMode, proxy_mail: Optional[str]
+) -> ProxyRegisterResult:
     """Registers the VM on the inverting proxy using a given mode."""
 
     logging.info(
@@ -137,7 +141,8 @@ def register_with_proxy(proxy_url: str, proxy_mode: ProxyMode, proxy_mail: Optio
     )
 
     logging.info(
-        f"Received backend ID '{register_result.backend_id}' and hostname '{register_result.hostname}'"
+        f"Received backend ID '{register_result.backend_id}' "
+        f"and hostname '{register_result.hostname}'"
     )
 
     return register_result
@@ -161,6 +166,7 @@ def stop_existing_agent() -> None:
         subprocess.run(["docker", "rm", container_id], check=True, capture_output=True)
 
 
+# pylint: disable=too-many-arguments
 def start_agent(
     backend_id: str,
     proxy_url: str,
@@ -191,7 +197,9 @@ def start_agent(
 
     logging.info(f"Starting agent container with config: {json.dumps(env)}")
 
-    env_args: List[str] = flatten([("--env", f"{key}={value}") for key, value in env.items()])
+    env_args: List[str] = flatten(
+        [("--env", f"{key}={value}") for key, value in env.items()]
+    )
 
     result = subprocess.run(
         [
@@ -208,14 +216,16 @@ def start_agent(
         + env_args
         + [AGENT_CONTAINER_URL],
         check=True,
-        capture_output=True
+        capture_output=True,
     )
 
     container_id = result.stdout.decode().strip()
     logging.info(f"Agent container running under ID '{container_id}'")
 
 
-def set_instance_metadata(instance_name: str, instance_zone: str, values: Dict[str, str]) -> None:
+def set_instance_metadata(
+    instance_name: str, instance_zone: str, values: Dict[str, str]
+) -> None:
     """Sets metadata values on a compute instance VM."""
 
     logging.info(
@@ -261,8 +271,8 @@ def request(
     for key, value in headers.items():
         req.add_header(key, value)
 
-    result = urlopen(req)
-    content: bytes = result.read()
+    with urlopen(req) as result:
+        content: bytes = result.read()
 
     return content
 
@@ -306,7 +316,7 @@ def get_instance_name() -> str:
     return get_required_metadata_value("instance/name")
 
 
-def get_instance_zone(short: bool=True) -> str:
+def get_instance_zone(short: bool = True) -> str:
     """Fetches the instance zone of the current VM."""
     zone = get_required_metadata_value("instance/zone")
     return zone.split("/")[-1] if short else zone
@@ -349,8 +359,10 @@ def get_proxy_mail() -> Optional[str]:
 def get_proxy_url(region: str) -> str:
     """Fetches the proxy url for the given region."""
     if get_attribute_value("proxy-registration-url") is not None:
-        logging.info(f"Using proxy URL from metadata")
-        proxy_url = require(get_attribute_value("proxy-registration-url"), name="proxy-registrion-url")
+        logging.info("Using proxy URL from metadata")
+        proxy_url = require(
+            get_attribute_value("proxy-registration-url"), name="proxy-registrion-url"
+        )
     else:
         logging.info(f"Fetching proxy config for region '{region}'")
         proxy_config = get_proxy_config(region=region)
@@ -360,8 +372,11 @@ def get_proxy_url(region: str) -> str:
 
 def get_proxy_config(region: str) -> Dict[str, Any]:
     """Fetches the proxy configuration for the given region."""
-    result = request(f"https://storage.googleapis.com/dl-platform-public-configs/regionalized-configs/proxy-agent-config-{region}.json")
-    return json.loads(result.decode()) # type: ignore
+    result = request(
+        "https://storage.googleapis.com/dl-platform-public-configs/"
+        + f"regionalized-configs/proxy-agent-config-{region}.json"
+    )
+    return json.loads(result.decode())  # type: ignore[no-any-return]
 
 
 def get_access_token() -> str:
@@ -377,7 +392,8 @@ def flatten(nested_list: List[Iterable[T]]) -> List[T]:
     return [item for sublist in nested_list for item in sublist]
 
 
-def require(value: Optional[T], name: str="Value") -> T:
+def require(value: Optional[T], name: str = "Value") -> T:
+    """Requires a given value to be not None."""
     if value is None:
         raise ValueError(f"{name} should not be None")
     return value
