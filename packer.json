@@ -11,10 +11,10 @@
           "image_description": "Custom Vertex Workbench image with OpenVSCode-server, Pyenv and Poetry.",
           "image_family": "vertex-ubuntu-vscode",
           "image_name": "vertex-ubuntu-vscode-latest",
-          "disk_size": 100,
+          "disk_size": 30,
           "ssh_username": "ubuntu",
-          "network": "{{user `project_id`}}",
-          "subnetwork": "{{user `project_id`}}",
+          "network": "default",
+          "subnetwork": "default",
           "tags": ["packer"]
         }
     ],

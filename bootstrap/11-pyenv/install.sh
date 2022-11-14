@@ -18,4 +18,4 @@ export PYENV_ROOT=/opt/pyenv
 bash ${SCRIPT_DIR}/pyenv-installer.sh
 
 # Install a base Python version.
-${PYENV_ROOT}/bin/pyenv install 3.9.9
+${PYENV_ROOT}/bin/pyenv install 3.9.14

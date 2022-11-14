@@ -1,4 +1,7 @@
-PROJECT_ID ?= playground-jdruiter-257009
+check-env:
+ifndef PROJECT_ID
+	$(error PROJECT_ID is undefined)
+endif
 
 .PHONY: build
 build:

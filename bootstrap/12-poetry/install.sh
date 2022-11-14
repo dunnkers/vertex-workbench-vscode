@@ -14,4 +14,4 @@ apt-get install -y python3.8-venv
 # Install poetry.
 export POETRY_HOME=/opt/poetry
 mkdir -p $POETRY_HOME
-python3 ${SCRIPT_DIR}/install-poetry.py
+python3 ${SCRIPT_DIR}/install-poetry.py --version 1.2.2
