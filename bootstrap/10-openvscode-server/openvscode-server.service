@@ -1,5 +1,6 @@
 [Unit]
 Description=openvscode-server
+After=workbench-bootstrap.service
 
 [Service]
 Type=simple
