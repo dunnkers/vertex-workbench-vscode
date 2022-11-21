@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-Script that configures and registeers a Vertex Workbench VM with an inverting
+Script that configures and registers a Vertex Workbench VM with an inverting
 proxy so that it can be accessed through the web browser from the console
 (using the 'Open JupyterLab' button under Vertex Workbench).
 

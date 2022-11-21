@@ -23,10 +23,9 @@ chown -R ${USER}:${USER} ${PYENV_ROOT}
 
 # Setup env.
 cat << 'EOF' >> ${USER_HOME_DIR}/.bashrc
-export PYENV_ROOT="${HOME}/.pyenv"
-export PATH="${PYENV_ROOT}/bin:$PATH"
-eval "$(pyenv init --path)"
-eval "$(pyenv virtualenv-init -)"
+export PYENV_ROOT="$HOME/.pyenv"
+command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"
+eval "$(pyenv init -)"
 EOF
 
 # Install a base Python version.

@@ -7,6 +7,7 @@ WorkingDirectory=/opt/workbench-bootstrap
 ExecStart=bash /opt/workbench-bootstrap/workbench-bootstrap.sh
 RemainAfterExit=true
 StandardOutput=journal
+Restart=on-failure
 
 [Install]
 WantedBy=multi-user.target
