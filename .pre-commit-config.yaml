@@ -1,0 +1,33 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: "v4.0.1"
+    hooks:
+      - id: check-added-large-files
+      - id: end-of-file-fixer
+      - id: mixed-line-ending
+      - id: trailing-whitespace
+  - repo: https://github.com/psf/black
+    rev: '22.10.0'
+    hooks:
+      - id: black
+  - repo: https://github.com/PyCQA/pylint
+    rev: 'v2.12.2'
+    hooks:
+      - id: pylint
+        args:
+          # Disable invalid-name (for script names) and logging-fstring-interpolation
+          - -d C0103,W1203
+        exclude: "install-poetry.py"
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: "v0.910-1"
+    hooks:
+      - id: mypy
+        args:
+          - --disallow-untyped-defs
+          - --disallow-any-unimported
+          - --no-implicit-optional
+          - --check-untyped-defs
+          - --warn-return-any
+          - --warn-unused-ignores
+          - --show-error-codes
+        exclude: "install-poetry.py"

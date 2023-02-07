@@ -15,5 +15,5 @@ set -o xtrace
 
 SCRIPT_DIR=`dirname $0 | xargs realpath`
 
-python3 ${SCRIPT_DIR}/register-on-proxy.py
 bash ${SCRIPT_DIR}/mount-data-disk.sh
+python3 ${SCRIPT_DIR}/register-on-proxy.py

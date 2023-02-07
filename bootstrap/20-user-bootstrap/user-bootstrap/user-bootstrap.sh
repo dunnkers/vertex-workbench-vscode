@@ -38,7 +38,7 @@ EOF
     # Rehash and set global Python version to fix stuck Python issue.
     # TODO: Generate Python version from `pyenv versions`.
     su ${USER} -c "${USER_HOME_DIR}/.pyenv/bin/pyenv rehash"
-    su ${USER} -c "${USER_HOME_DIR}/.pyenv/bin/pyenv global 3.9.9"
+    su ${USER} -c "${USER_HOME_DIR}/.pyenv/bin/pyenv global 3.9.14"
 fi
 
 # Setup poetry for the user.

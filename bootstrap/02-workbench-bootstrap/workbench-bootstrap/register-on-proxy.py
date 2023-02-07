@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-Script that configures and registeers a Vertex Workbench VM with an inverting
+Script that configures and registers a Vertex Workbench VM with an inverting
 proxy so that it can be accessed through the web browser from the console
 (using the 'Open JupyterLab' button under Vertex Workbench).
 
@@ -18,7 +18,7 @@ from dataclasses import dataclass
 import json
 import logging
 import subprocess
-from typing import Dict, Optional
+from typing import Any, Dict, List, Iterable, Optional, TypeVar
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError
@@ -26,12 +26,14 @@ from urllib.error import HTTPError
 AGENT_CONTAINER_NAME = "proxy-agent"
 AGENT_CONTAINER_URL = "gcr.io/inverting-proxy/agent"
 
+T = TypeVar("T")  # pylint: disable=invalid-name
 
 logging.basicConfig(format="[%(asctime)s] %(message)s", level=logging.INFO)
 
 
 class ProxyMode(Enum):
     """Enum of all possible proxy modes."""
+
     MAIL = "mail"
     NONE = "none"
     PROJECT_EDITORS = "project_editors"
@@ -42,11 +44,12 @@ class ProxyMode(Enum):
 @dataclass
 class ProxyRegisterResult:
     """Utility class for storing the result of registering on the proxy."""
+
     backend_id: str
     hostname: str
 
 
-def main():
+def main() -> None:
     """
     Main function that registers the VM on the Workbench inverting proxy for the given region,
     starts the proxy agent on the VM and informs Workbench where to forward traffic by setting
@@ -58,6 +61,7 @@ def main():
     instance_name = get_instance_name()
     instance_region = get_instance_region()
     instance_zone = get_instance_zone()
+    project_id = get_project_id()
 
     # Get proxy url for the region.
     proxy_url = get_proxy_url(region=instance_region)
@@ -76,7 +80,7 @@ def main():
     start_agent(
         backend_id=registration.backend_id,
         proxy_url=proxy_url,
-        project_id=get_project_id(),
+        project_id=project_id,
         instance_id=instance_id,
         instance_zone=instance_zone,
     )
@@ -92,12 +96,14 @@ def main():
             "proxy-url": registration.hostname,
             "title": "OpenVSCode with Pyenv and Poetry",
             "framework": "OpenVSCode/Pyenv/Poetry",
-            "version": "latest"
-        }
+            "version": "latest",
+        },
     )
 
 
-def register_with_proxy(proxy_url: str, proxy_mode: ProxyMode, proxy_mail: Optional[str]):
+def register_with_proxy(
+    proxy_url: str, proxy_mode: ProxyMode, proxy_mail: Optional[str]
+) -> ProxyRegisterResult:
     """Registers the VM on the inverting proxy using a given mode."""
 
     logging.info(
@@ -117,6 +123,8 @@ def register_with_proxy(proxy_url: str, proxy_mode: ProxyMode, proxy_mail: Optio
     }
 
     if proxy_mode == ProxyMode.MAIL:
+        if proxy_mail is None:
+            raise ValueError("proxy_mail should be given if proxy mode is mail")
         result = request(proxy_endpoint, headers=headers, data=proxy_mail.encode())
     elif proxy_mode in (ProxyMode.PROJECT_EDITORS, ProxyMode.SERVICE_ACCOUNT):
         result = request(proxy_endpoint, headers=headers, data=b"")
@@ -128,18 +136,19 @@ def register_with_proxy(proxy_url: str, proxy_mode: ProxyMode, proxy_mail: Optio
         raise Exception(f"Unsupported proxy-mode: {proxy_mode.value}")
 
     result_json = json.loads(result.decode())
-    result = ProxyRegisterResult(
+    register_result = ProxyRegisterResult(
         backend_id=result_json["backendID"], hostname=result_json["hostname"]
     )
 
     logging.info(
-        f"Received backend ID '{result.backend_id}' and hostname '{result.hostname}'"
+        f"Received backend ID '{register_result.backend_id}' "
+        f"and hostname '{register_result.hostname}'"
     )
 
-    return result
+    return register_result
 
 
-def stop_existing_agent():
+def stop_existing_agent() -> None:
     """Stops an existing proxy agent if already running in Docker."""
 
     ps_result = subprocess.run(
@@ -157,6 +166,7 @@ def stop_existing_agent():
         subprocess.run(["docker", "rm", container_id], check=True, capture_output=True)
 
 
+# pylint: disable=too-many-arguments
 def start_agent(
     backend_id: str,
     proxy_url: str,
@@ -167,7 +177,7 @@ def start_agent(
     health_check_path: str = "/",
     health_check_interval_seconds: int = 30,
     proxy_timeout: str = "60s",
-):
+) -> None:
     """Starts a new instance of the proxy agent in Docker."""
 
     env = {
@@ -187,7 +197,9 @@ def start_agent(
 
     logging.info(f"Starting agent container with config: {json.dumps(env)}")
 
-    env_args = flatten([("--env", f"{key}={value}") for key, value in env.items()])
+    env_args: List[str] = flatten(
+        [("--env", f"{key}={value}") for key, value in env.items()]
+    )
 
     result = subprocess.run(
         [
@@ -204,14 +216,16 @@ def start_agent(
         + env_args
         + [AGENT_CONTAINER_URL],
         check=True,
-        capture_output=True
+        capture_output=True,
     )
 
     container_id = result.stdout.decode().strip()
     logging.info(f"Agent container running under ID '{container_id}'")
 
 
-def set_instance_metadata(instance_name: str, instance_zone: str, values: Dict[str, str]):
+def set_instance_metadata(
+    instance_name: str, instance_zone: str, values: Dict[str, str]
+) -> None:
     """Sets metadata values on a compute instance VM."""
 
     logging.info(
@@ -257,8 +271,8 @@ def request(
     for key, value in headers.items():
         req.add_header(key, value)
 
-    result = urlopen(req)
-    content = result.read()
+    with urlopen(req) as result:
+        content: bytes = result.read()
 
     return content
 
@@ -274,72 +288,81 @@ def get_metadata_value(key: str) -> Optional[str]:
         return None
 
 
-def get_attribute_value(name: str) -> Optional[str]:
+def get_required_metadata_value(key: str) -> str:
+    """Fetches the requested metadata value, erroring if it doesn't exist."""
+    return require(get_metadata_value(key), name=key)
+
+
+def get_attribute_value(key: str) -> Optional[str]:
     """Fetches the requested attribute value from the current VM."""
     try:
-        return get_metadata_value(f"instance/attributes/{name}")
+        return get_metadata_value(f"instance/attributes/{key}")
     except HTTPError:
         return None
 
 
-def get_project_id() -> Optional[str]:
+def get_project_id() -> str:
     """Fetches the project ID of the current VM."""
-    return get_metadata_value("project/project-id")
+    return get_required_metadata_value("project/project-id")
 
 
-def get_instance_id() -> Optional[str]:
+def get_instance_id() -> str:
     """Fetches the instance ID of the current VM."""
-    return get_metadata_value("instance/id")
+    return get_required_metadata_value("instance/id")
 
 
-def get_instance_name() -> Optional[str]:
+def get_instance_name() -> str:
     """Fetches the instance name of the current VM."""
-    return get_metadata_value("instance/name")
+    return get_required_metadata_value("instance/name")
 
 
-def get_instance_zone(short=True) -> Optional[str]:
+def get_instance_zone(short: bool = True) -> str:
     """Fetches the instance zone of the current VM."""
-    zone = get_metadata_value("instance/zone")
-    return zone.split("/")[-1] if zone is not None and short else zone
+    zone = get_required_metadata_value("instance/zone")
+    return zone.split("/")[-1] if short else zone
 
 
-def get_instance_region():
+def get_instance_region() -> str:
     """Fetches the instance region of the current VM."""
     zone = get_instance_zone(short=True)
     return zone.rsplit("-", 1)[0]
 
 
-def get_vm_identity(audience: str):
+def get_vm_identity(audience: str) -> str:
     """Fetches an identify token for the current VM with the given audience."""
-    return get_metadata_value(
+    return get_required_metadata_value(
         f"instance/service-accounts/default/identity?format=full&audience={audience}"
     )
 
 
 def get_proxy_mode() -> ProxyMode:
     """Fetches the proxy mode for the current VM (as specified by the proxy-mode attribute)."""
-    proxy_mode = ProxyMode.NONE
 
     if get_attribute_value("proxy-mode") is not None:
         proxy_mode = ProxyMode(get_attribute_value("proxy-mode"))
     elif get_attribute_value("proxy-user-mail") is not None:
         proxy_mode = ProxyMode.MAIL
+    else:
+        proxy_mode = ProxyMode.NONE
 
     return proxy_mode
 
 
-def get_proxy_mail():
+def get_proxy_mail() -> Optional[str]:
     """
     Fetches the proxy email for the current VM (as specified by the proxy-mode attribute).
     Only valid if proxy-mode is email.
     """
     return get_attribute_value("proxy-user-mail")
 
+
 def get_proxy_url(region: str) -> str:
     """Fetches the proxy url for the given region."""
     if get_attribute_value("proxy-registration-url") is not None:
-        logging.info(f"Using proxy URL from metadata")
-        proxy_url = get_attribute_value("proxy-registration-url")
+        logging.info("Using proxy URL from metadata")
+        proxy_url = require(
+            get_attribute_value("proxy-registration-url"), name="proxy-registrion-url"
+        )
     else:
         logging.info(f"Fetching proxy config for region '{region}'")
         proxy_config = get_proxy_config(region=region)
@@ -347,10 +370,13 @@ def get_proxy_url(region: str) -> str:
     return proxy_url
 
 
-def get_proxy_config(region: str):
+def get_proxy_config(region: str) -> Dict[str, Any]:
     """Fetches the proxy configuration for the given region."""
-    result = request(f"https://storage.googleapis.com/dl-platform-public-configs/regionalized-configs/proxy-agent-config-{region}.json")
-    return json.loads(result.decode())
+    result = request(
+        "https://storage.googleapis.com/dl-platform-public-configs/"
+        + f"regionalized-configs/proxy-agent-config-{region}.json"
+    )
+    return json.loads(result.decode())  # type: ignore[no-any-return]
 
 
 def get_access_token() -> str:
@@ -361,9 +387,16 @@ def get_access_token() -> str:
     return result.stdout.decode().strip()
 
 
-def flatten(nested_list):
+def flatten(nested_list: List[Iterable[T]]) -> List[T]:
     """Utility function for flattening a nested list."""
     return [item for sublist in nested_list for item in sublist]
+
+
+def require(value: Optional[T], name: str = "Value") -> T:
+    """Requires a given value to be not None."""
+    if value is None:
+        raise ValueError(f"{name} should not be None")
+    return value
 
 
 if __name__ == "__main__":

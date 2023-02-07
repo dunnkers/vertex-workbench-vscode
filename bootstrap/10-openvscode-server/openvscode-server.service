@@ -1,9 +1,10 @@
 [Unit]
 Description=openvscode-server
+After=workbench-bootstrap.service
 
 [Service]
 Type=simple
-ExecStart=/opt/openvscode-server/server.sh --host 127.0.0.1 --port 8080
+ExecStart=/opt/openvscode-server/bin/openvscode-server --host 127.0.0.1 --port 8080 --without-connection-token --telemetry-level off
 RestartSec=10
 User=ubuntu
 Group=ubuntu
