@@ -233,23 +233,29 @@ def set_instance_metadata(
     )
 
     value_str = ",".join(f"{key}={value}" for key, value in values.items())
-    subprocess.run(
-        [
-            "timeout",
-            "30",
-            "gcloud",
-            "compute",
-            "instances",
-            "add-metadata",
-            instance_name,
-            "--metadata",
-            value_str,
-            "--zone",
-            instance_zone,
-        ],
-        check=True,
-        capture_output=True,
-    )
+    try:
+        subprocess.run(
+            [
+                "gcloud",
+                "compute",
+                "instances",
+                "add-metadata",
+                instance_name,
+                "--metadata",
+                value_str,
+                "--zone",
+                instance_zone,
+            ],
+            check=True,
+            capture_output=True,
+            timeout=30,
+        )
+    except Exception as ex:
+        print(ex)
+        print(ex.returncode)
+        print(ex.stdout.decode())
+        print(ex.stderr.decode())
+        raise ex
 
 
 def request(
