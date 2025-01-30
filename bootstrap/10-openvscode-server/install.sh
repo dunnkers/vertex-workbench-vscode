@@ -8,7 +8,7 @@ set -o xtrace
 SCRIPT_DIR=`dirname $0 | xargs realpath`
 
 # Install OpenVSCode server
-OPENVSCODE_SERVER_VERSION=1.90.0
+OPENVSCODE_SERVER_VERSION=1.96.4
 curl -fOL https://github.com/gitpod-io/openvscode-server/releases/download/openvscode-server-v${OPENVSCODE_SERVER_VERSION}/openvscode-server-v${OPENVSCODE_SERVER_VERSION}-linux-x64.tar.gz && \
 mkdir -p /opt/openvscode-server && \
 tar -xvf openvscode-server-v${OPENVSCODE_SERVER_VERSION}-linux-x64.tar.gz -C /opt/openvscode-server --strip-components=1 && \
